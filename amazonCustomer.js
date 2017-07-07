@@ -6,10 +6,8 @@ var connection = mysql.createConnection({
   host: "localhost",
   port: 3306,
 
-  // Your username
   user: "root",
 
-  // Your password
   password: "Lionel10Messi!",
   database: "bamazon"
 });
@@ -56,17 +54,30 @@ var queries = {
         connection.query("SELECT stock_quantity FROM products WHERE item_id = ?", item, function(err, res){
             if (err) throw err;
 
-            //console.log(res);
-
             var stock = res[0].stock_quantity;
-            console.log(stock);
 
             if (stock > count){
                 console.log('made it');
+                var newCount = stock - count;
+                queries.updateItem(item, newCount, count);
             } else {
                 console.log('I\'m sorry, there is not enough stock of this item to complete your order.\nThere is only ' + parseFloat(stock) + ' left.\nPlease try your order again.');
+                queries.all();
             }
         })
+    },
+    updateItem: function(item, count, oldCount){
+        var itemCost;
+        connection.query("SELECT price from products where item_id = ?", item, function(err, res){
+            if (err) throw err;
+            itemCost = parseFloat(res[0].price).toFixed(2) * parseFloat(oldCount);
+        })
+        connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [count, item], function(err, res){
+            if (err) throw err;
+
+            console.log('You\'re order has been placed! The total cost of your order is $' + itemCost.toFixed(2));
+        })
+        connection.end;
     }
 }
 
