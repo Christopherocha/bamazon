@@ -57,7 +57,6 @@ var queries = {
             var stock = res[0].stock_quantity;
 
             if (stock > count){
-                console.log('made it');
                 var newCount = stock - count;
                 queries.updateItem(item, newCount, count);
             } else {
