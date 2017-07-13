@@ -35,6 +35,7 @@ var queries = {
 
             console.log(table.toString());
         })
+        connection.end();
     },
     low: function(){
         connection.query("SELECT item_id, product_name FROM products WHERE stock_quantity < 5", function(err, res) {
@@ -52,7 +53,10 @@ var queries = {
             }
 
             console.log(table.toString());
+            
+            
         })
+        connection.end();
     },
     addStock: function(){
         inquirer.prompt([
@@ -67,6 +71,7 @@ var queries = {
         ]).then(function(choice){
             var curStock;
             connection.query("SELECT stock_quantity FROM products WHERE item_id = ?", choice.id, function(err, res){
+                console.log(res);
                 curStock = res[0].stock_quantity;
             })
             var newStock = parseFloat(stock) + parseFloat(curStock);      
@@ -74,10 +79,37 @@ var queries = {
                 if(err) throw err;
                 console.log("Item_id: " + choice.id + "'s stock has been successfully updated to a total of " + newStock);
             })
+        connection.end();
+            
         })
     },
     addItem: function(){
+        inquirer.prompt([
+            {
+                name: 'name',
+                message: 'What would you like the name of your product to be?'
+            },
+            {
+                name: 'dept',
+                message: 'What shoe department does this item belong to?'
+            },
+            {
+                name: 'price',
+                message: 'What is the price of this item? ex. 50.00'
+            },
+            {
+                name: 'stock',
+                message: 'How many of this item are in stock?'
+            }
+        ]).then(function(choices){
+            connection.query("INSERT INTO products (product_name, department_name, price, stock_quantity) VALUES (?, ?, ?, ?)", [choices.name, choices.dept, choices.price, choices.stock], function(err, res){
+                if(err) throw err;
 
+                console.log("The new product has been added.")
+            })
+            connection.end();
+        })
+        
     }
 }
 
@@ -89,15 +121,14 @@ inquirer.prompt({
 }).then(function(choice){
     if(choice.task === 'View all items for sale'){
         queries.all();
-        connection.end();
     } else if(choice.task === 'View low inventory'){
         queries.low();
-        connection.end();
     } else if(choice.task === 'Add stock to an existing item'){
         queries.all();
         queries.addStock();
         
     } else {
         queries.addItem();
+        
     }
 })
