@@ -14,25 +14,22 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
   if (err) throw err;
-  console.log("connected as id " + connection.threadId);
+  //console.log("connected as id " + connection.threadId);
 });
 
 var queries = {
     all: function(){
         connection.query("SELECT item_id, product_name, price, stock_quantity FROM products", function(err, res) {
             if (err) throw err;
-            
             var table = new Table({
                 head: ['Item ID', 'Product Name', 'Price', 'Stock'],
                 colWidths: [25, 50, 25, 25]
             })
-
             for(var i = 0; i < res.length; i++){
                 table.push(
                     [res[i].item_id, res[i].product_name, parseFloat(res[i].price).toFixed(2), parseFloat(res[i].stock_quantity)]
                 );
             }
-
             console.log(table.toString());
         })
         connection.end();
@@ -40,21 +37,16 @@ var queries = {
     low: function(){
         connection.query("SELECT item_id, product_name FROM products WHERE stock_quantity < 5", function(err, res) {
             if (err) throw err;
-            
             var table = new Table({
                 head: ['Item ID', 'Product Name'],
                 colWidths: [25, 50]
             })
-
             for(var i = 0; i < res.length; i++){
                 table.push(
                     [res[i].item_id, res[i].product_name]
                 );
             }
-
             console.log(table.toString());
-            
-            
         })
         connection.end();
     },
@@ -70,17 +62,20 @@ var queries = {
             }
         ]).then(function(choice){
             var curStock;
-            connection.query("SELECT stock_quantity FROM products WHERE item_id = ?", choice.id, function(err, res){
+            connection.query("SELECT stock_quantity FROM products WHERE item_id = ?", choice.item, function(err, res){
+                if(err) throw err;
                 console.log(res);
                 curStock = res[0].stock_quantity;
             })
-            var newStock = parseFloat(stock) + parseFloat(curStock);      
-            connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ? ", [choice.id, newStock], function(err, res){
+            var newStock = parseFloat(choice.amount) + parseFloat(curStock); 
+            var strConv = parseFloat(choice.item);
+            console.log("newStock type: " + typeof newStock + "\nchoice.item type: " + typeof strConv)    
+            connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [newStock, strConv], function(err, res){
                 if(err) throw err;
-                console.log("Item_id: " + choice.id + "'s stock has been successfully updated to a total of " + newStock);
+                console.log(res)
+                console.log("Item_id: " + choice.item + "'s stock has been successfully updated to a total of " + newStock);
             })
         connection.end();
-            
         })
     },
     addItem: function(){
@@ -109,7 +104,6 @@ var queries = {
             })
             connection.end();
         })
-        
     }
 }
 
@@ -124,11 +118,8 @@ inquirer.prompt({
     } else if(choice.task === 'View low inventory'){
         queries.low();
     } else if(choice.task === 'Add stock to an existing item'){
-        queries.all();
         queries.addStock();
-        
     } else {
         queries.addItem();
-        
     }
 })
